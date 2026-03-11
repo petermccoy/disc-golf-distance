@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Disc Golf Distance</string>
+    <string name="btn_start">Start Location</string>
+    <string name="btn_end">End Location</string>
+    <string name="status_ready">Tap Start Location to mark your throwing position.</string>
+</resources>

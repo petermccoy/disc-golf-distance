@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Backgrounds -->
+    <color name="bg_primary">#0D1F0D</color>
+    <color name="toolbar_bg">#1A2E1A</color>
+    <color name="card_bg">#1E2E1E</color>
+    <color name="card_active_bg">#1A2A1A</color>
+    <color name="header_bg">#162416</color>
+    <color name="graph_bg">#0D1F0D</color>
+    <color name="row_even">#121F12</color>
+    <color name="row_odd">#0D1A0D</color>
+
+    <!-- Text -->
+    <color name="text_primary">#E8F5E9</color>
+    <color name="text_secondary">#A5C8A5</color>
+    <color name="text_hint">#607860</color>
+    <color name="text_header">#80A080</color>
+    <color name="text_on_action">#FFFFFF</color>
+
+    <!-- Buttons -->
+    <color name="btn_start">#2E7D32</color>
+    <color name="btn_end">#C62828</color>
+    <color name="btn_delete">#B71C1C</color>
+
+    <!-- Accent -->
+    <color name="accent">#69F0AE</color>
+
+    <!-- GPS accuracy -->
+    <color name="accuracy_good">#69F0AE</color>
+    <color name="accuracy_ok">#FFEB3B</color>
+    <color name="accuracy_poor">#FF5252</color>
+
+    <!-- Material theme references -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

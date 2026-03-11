@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/toolbar_bg"
+            app:title="@string/app_name"
+            app:titleTextColor="@color/text_primary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- GPS Accuracy Banner -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/ivGpsIndicator"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_gps"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/tvGpsAccuracy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GPS: acquiring…"
+                    android:textColor="@color/accuracy_poor"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Session Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <TextView
+                    android:id="@+id/tvSessionInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="Session: —\nNo throws yet"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:fontFamily="monospace"
+                    tools:ignore="HardcodedText" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Start Location Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartLocation"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:text="@string/btn_start"
+                android:textSize="18sp"
+                android:textColor="@color/text_on_action"
+                app:backgroundTint="@color/btn_start"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_pin_start"
+                app:iconGravity="textStart"
+                android:layout_marginBottom="12dp" />
+
+            <!-- End Location Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEndLocation"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:text="@string/btn_end"
+                android:textSize="18sp"
+                android:textColor="@color/text_on_action"
+                app:backgroundTint="@color/btn_end"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_pin_end"
+                app:iconGravity="textStart"
+                android:enabled="false"
+                android:alpha="0.4"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Active throw card (visible when start is marked) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardStarted"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/card_active_bg"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/btn_start"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:text="Start Location Marked"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/btn_start"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:id="@+id/tvStartTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"
+                        tools:text="Started: 14:32:10" />
+
+                    <TextView
+                        android:id="@+id/tvStartCoords"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"
+                        tools:text="37.123456, -122.654321  ±3m" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Status message -->
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/status_ready"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

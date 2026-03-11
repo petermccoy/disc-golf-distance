@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/toolbar_bg"
+            app:titleTextColor="@color/text_primary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Sort controls -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="@color/card_bg"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sort: "
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:layout_marginEnd="4dp" />
+
+        <Spinner
+            android:id="@+id/spinnerSortField"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp" />
+
+        <Spinner
+            android:id="@+id/spinnerSortDir"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <!-- Column headers -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:background="@color/header_bg"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:text="#"
+            android:textColor="@color/text_header"
+            android:textStyle="bold"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="Session"
+            android:textColor="@color/text_header"
+            android:textStyle="bold"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:text="Distance"
+            android:textColor="@color/text_header"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:gravity="end" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:text="Time"
+            android:textColor="@color/text_header"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:gravity="end" />
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!-- Summary row -->
+    <TextView
+        android:id="@+id/tvSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:textColor="@color/accent"
+        android:textSize="13sp"
+        android:fontFamily="monospace"
+        android:background="@color/card_bg"
+        android:gravity="center"
+        android:visibility="gone" />
+
+    <!-- Throws list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="No throws recorded yet.\nGo back and mark some throws!"
+        android:gravity="center"
+        android:textColor="@color/text_secondary"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+</LinearLayout>
