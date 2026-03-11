@@ -43,6 +43,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentAccuracy = MutableLiveData<Float>()
     val currentAccuracy: LiveData<Float> get() = _currentAccuracy
 
+    // Aim direction – compass bearing toward the basket for this session
+    private val _sessionTargetBearing = MutableLiveData<Float?>(null)
+    val sessionTargetBearing: LiveData<Float?> get() = _sessionTargetBearing
+
     // Session state
     var currentSessionId: String = newSessionId()
         private set
@@ -53,6 +57,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateCurrentAccuracy(acc: Float) {
         _currentAccuracy.value = acc
+    }
+
+    fun setTargetBearing(bearing: Float) {
+        _sessionTargetBearing.value = bearing
+    }
+
+    fun clearTargetBearing() {
+        _sessionTargetBearing.value = null
     }
 
     fun recordStart(location: Location) {
@@ -116,6 +128,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         throwNumberInSession = 0
         startSnapshot = null
         _lastThrow.value = null
+        _sessionTargetBearing.value = null
         _appState.value = AppState.IDLE
         _statusMessage.value = "New session started – tap Start Location."
     }

@@ -2,8 +2,13 @@ package com.discgolf.distance
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
@@ -34,6 +39,28 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var lastKnownLocation: Location? = null
+
+    // ── Compass sensor ────────────────────────────────────────────────────────
+
+    private lateinit var sensorManager: SensorManager
+    private var rotationVectorSensor: Sensor? = null
+    private var currentCompassBearing = Float.NaN
+
+    private val compassListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
+            val rotMatrix = FloatArray(9)
+            SensorManager.getRotationMatrixFromVector(rotMatrix, event.values)
+            val orientation = FloatArray(3)
+            SensorManager.getOrientation(rotMatrix, orientation)
+            val azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+            currentCompassBearing = (azimuth + 360f) % 360f
+            updateLiveCompassDisplay(currentCompassBearing)
+        }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
+
+    // ── Location ──────────────────────────────────────────────────────────────
 
     private val locationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY, 2_000L
@@ -73,6 +100,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         setupButtons()
@@ -83,11 +113,15 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (hasLocationPermission()) startLocationUpdates()
+        rotationVectorSensor?.let {
+            sensorManager.registerListener(compassListener, it, SensorManager.SENSOR_DELAY_UI)
+        }
     }
 
     override fun onPause() {
         super.onPause()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        sensorManager.unregisterListener(compassListener)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -102,7 +136,11 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_graph -> {
-                startActivity(Intent(this, ThrowGraphActivity::class.java))
+                val intent = Intent(this, ThrowGraphActivity::class.java)
+                viewModel.sessionTargetBearing.value?.let { bearing ->
+                    intent.putExtra(ThrowGraphActivity.EXTRA_TARGET_BEARING, bearing)
+                }
+                startActivity(intent)
                 true
             }
             R.id.action_new_session -> {
@@ -118,6 +156,17 @@ class MainActivity : AppCompatActivity() {
     private fun setupButtons() {
         binding.btnStartLocation.setOnClickListener { onStartClicked() }
         binding.btnEndLocation.setOnClickListener { onEndClicked() }
+
+        binding.btnSetAim.setOnClickListener {
+            if (currentCompassBearing.isNaN()) {
+                Toast.makeText(this, "Compass not ready – point phone toward basket and try again.", Toast.LENGTH_SHORT).show()
+            } else {
+                viewModel.setTargetBearing(currentCompassBearing)
+            }
+        }
+        binding.btnClearAim.setOnClickListener {
+            viewModel.clearTargetBearing()
+        }
     }
 
     private fun observeViewModel() {
@@ -134,6 +183,9 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.allThrows.observe(this) { throws ->
             binding.tvSessionInfo.text = buildSessionInfo(throws)
+        }
+        viewModel.sessionTargetBearing.observe(this) { bearing ->
+            updateAimDisplay(bearing)
         }
     }
 
@@ -166,6 +218,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ── Aim direction UI ──────────────────────────────────────────────────────
+
+    private fun updateLiveCompassDisplay(bearing: Float) {
+        // Only show live reading if aim is not yet set
+        if (viewModel.sessionTargetBearing.value == null) {
+            binding.tvLiveCompass.text = "%.0f°  %s — point at basket, tap Set Aim".format(
+                bearing, bearingToCardinal(bearing)
+            )
+        }
+    }
+
+    private fun updateAimDisplay(bearing: Float?) {
+        if (bearing == null) {
+            binding.tvLiveCompass.visibility = View.VISIBLE
+            binding.btnSetAim.visibility = View.VISIBLE
+            binding.rowAimSet.visibility = View.GONE
+        } else {
+            binding.tvLiveCompass.visibility = View.GONE
+            binding.btnSetAim.visibility = View.GONE
+            binding.rowAimSet.visibility = View.VISIBLE
+            binding.tvAimSet.text = "Aimed: %.0f° %s".format(bearing, bearingToCardinal(bearing))
+        }
+    }
+
+    private fun bearingToCardinal(bearing: Float): String {
+        val dirs = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+        return dirs[((bearing + 22.5f) / 45f).toInt() % 8]
+    }
+
     // ── Location ──────────────────────────────────────────────────────────────
 
     private fun requestLocationPermissions() {
@@ -187,7 +268,6 @@ class MainActivity : AppCompatActivity() {
         fusedLocationClient.requestLocationUpdates(
             locationRequest, locationCallback, Looper.getMainLooper()
         )
-        // Seed with last known so we have something immediately
         fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
             if (loc != null && lastKnownLocation == null) {
                 lastKnownLocation = loc

@@ -13,10 +13,11 @@ import kotlin.math.*
 /**
  * Canvas view that renders all throws relative to their start points.
  *
- * - Distance rings every 100 ft up to max throw distance.
+ * - Distance rings every 100 ft (full circles or 90° arc when arcMode=true).
  * - Each throw is a dot at its relative (x,y) offset from origin.
+ * - When targetBearing is set, that direction rotates to the top ("up").
+ * - arcMode filters throws to ±45° of the target and draws only the arc wedge.
  * - Supports pinch-zoom and pan.
- * - All throws in the same session share the same origin (first throw's start).
  */
 class ThrowGraphView @JvmOverloads constructor(
     context: Context,
@@ -27,6 +28,14 @@ class ThrowGraphView @JvmOverloads constructor(
     // ── State ─────────────────────────────────────────────────────────────────
 
     private var throws: List<DiscThrow> = emptyList()
+
+    /** Compass bearing (degrees) that points toward the basket. Null = North-up. */
+    var targetBearing: Float? = null
+        set(value) { field = value; resetView() }
+
+    /** When true, show only a 90° arc (±45° around target) instead of full 360°. */
+    var arcMode: Boolean = false
+        set(value) { field = value; invalidate() }
 
     // transform
     private var scaleFactor = 1f
@@ -67,13 +76,28 @@ class ThrowGraphView @JvmOverloads constructor(
     }
     private val bgPaint = Paint().apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#1A2A1A")  // Dark green background
+        color = Color.parseColor("#1A2A1A")
     }
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 1.5f
         color = Color.parseColor("#60FFFFFF")
         pathEffect = DashPathEffect(floatArrayOf(10f, 8f), 0f)
+    }
+    private val aimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 2.5f
+        color = Color.parseColor("#FFFFD700")  // Gold, matches origin
+    }
+    private val aimFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#40FFD700")
+    }
+    private val aimLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFD700")
+        textSize = 28f
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.DEFAULT_BOLD
     }
 
     // Session colours (cycles)
@@ -148,29 +172,58 @@ class ThrowGraphView @JvmOverloads constructor(
             return
         }
 
-        // Compute max distance for rings (in feet, rounded up to nearest 100)
-        val maxFt = throws.maxOf { it.distanceFeet }
-        val ringStep = 100.0  // feet per ring
+        val aim = targetBearing
+
+        // When arcMode is on, filter to ±45° of target
+        val visibleThrows = if (arcMode && aim != null) {
+            throws.filter { t ->
+                val raw = DiscThrow.calculateBearing(t.startLat, t.startLng, t.endLat, t.endLng)
+                val rel = relativeBearing(raw, aim.toDouble())
+                abs(rel) <= 45.0
+            }
+        } else {
+            throws
+        }
+
+        val maxFt = visibleThrows.maxOfOrNull { it.distanceFeet }
+            ?: throws.maxOf { it.distanceFeet }
+        val ringStep = 100.0
         val numRings = ceil(maxFt / ringStep).toInt().coerceAtLeast(1)
         val maxRingFt = numRings * ringStep
 
-        // Fit the outermost ring into the view with padding
         val padding = 80f
         val viewRadius = (minOf(width, height) / 2f) - padding
         val pixelsPerFoot = viewRadius / maxRingFt.toFloat()
 
-        // Origin = centre of view + pan/zoom
         val cx = width / 2f + translateX
         val cy = height / 2f + translateY
 
         canvas.save()
         canvas.scale(scaleFactor, scaleFactor, cx, cy)
 
-        // Draw rings
+        // Draw arc wedge fill (only in arcMode)
+        if (arcMode && aim != null) {
+            val outerR = (maxRingFt * pixelsPerFoot).toFloat()
+            val wedgePath = Path().apply {
+                moveTo(cx, cy)
+                // Arc from -135° to -45° in canvas coords (±45° around "up")
+                arcTo(RectF(cx - outerR, cy - outerR, cx + outerR, cy + outerR),
+                    -135f, 90f, false)
+                close()
+            }
+            canvas.drawPath(wedgePath, aimFillPaint)
+        }
+
+        // Draw rings (full circles or arcs)
         for (i in 1..numRings) {
             val ringFt = i * ringStep
             val r = (ringFt * pixelsPerFoot).toFloat()
-            canvas.drawCircle(cx, cy, r, ringPaint)
+            if (arcMode && aim != null) {
+                val rect = RectF(cx - r, cy - r, cx + r, cy + r)
+                canvas.drawArc(rect, -135f, 90f, false, ringPaint)
+            } else {
+                canvas.drawCircle(cx, cy, r, ringPaint)
+            }
             // Label at top of ring
             canvas.drawText(
                 "${ringFt.toInt()} ft",
@@ -182,25 +235,50 @@ class ThrowGraphView @JvmOverloads constructor(
 
         // Draw compass axes
         val axisLen = (maxRingFt * pixelsPerFoot).toFloat()
-        canvas.drawLine(cx - axisLen, cy, cx + axisLen, cy, axisPaint)
-        canvas.drawLine(cx, cy - axisLen, cx, cy + axisLen, axisPaint)
+        if (arcMode && aim != null) {
+            // Only draw the two bounding radii of the 90° wedge
+            val leftRad = Math.toRadians(-135.0)   // canvas angle for NW (-45° bearing)
+            val rightRad = Math.toRadians(-45.0)   // canvas angle for NE (+45° bearing)
+            canvas.drawLine(cx, cy,
+                cx + (cos(leftRad) * axisLen).toFloat(),
+                cy + (sin(leftRad) * axisLen).toFloat(), axisPaint)
+            canvas.drawLine(cx, cy,
+                cx + (cos(rightRad) * axisLen).toFloat(),
+                cy + (sin(rightRad) * axisLen).toFloat(), axisPaint)
+        } else {
+            canvas.drawLine(cx - axisLen, cy, cx + axisLen, cy, axisPaint)
+            canvas.drawLine(cx, cy - axisLen, cx, cy + axisLen, axisPaint)
+        }
 
-        // Draw throws grouped by session for colour coding
+        // Draw aim direction arrow (target bearing = top of graph)
+        if (aim != null) {
+            val arrowLen = axisLen.coerceAtMost(viewRadius + padding * 0.6f)
+            // Arrow points straight up (canvas y decreases)
+            canvas.drawLine(cx, cy, cx, cy - arrowLen, aimPaint)
+            // Arrowhead
+            val tip = 20f
+            canvas.drawLine(cx, cy - arrowLen, cx - tip, cy - arrowLen + tip * 1.5f, aimPaint)
+            canvas.drawLine(cx, cy - arrowLen, cx + tip, cy - arrowLen + tip * 1.5f, aimPaint)
+            canvas.drawText("Basket", cx, cy - arrowLen - 12f, aimLabelPaint)
+        }
+
+        // Draw throws grouped by session
         val sessions = throws.map { it.sessionId }.distinct()
         val sessionColorMap = sessions.mapIndexed { idx, id ->
             id to sessionColors[idx % sessionColors.size]
         }.toMap()
 
-        for (throw_ in throws) {
-            val bearing = DiscThrow.calculateBearing(
+        for (throw_ in visibleThrows) {
+            val rawBearing = DiscThrow.calculateBearing(
                 throw_.startLat, throw_.startLng,
                 throw_.endLat, throw_.endLng
             )
+            // Adjust bearing relative to aim direction (0° = aim direction = up)
+            val displayBearing = if (aim != null) relativeBearing(rawBearing, aim.toDouble())
+                                 else rawBearing
             val distFt = throw_.distanceFeet
-            val bearingRad = Math.toRadians(bearing)
+            val bearingRad = Math.toRadians(displayBearing)
 
-            // Convert polar (bearing, distance) to canvas (x,y)
-            // bearing 0=North=up, so x = sin(b)*r, y = -cos(b)*r
             val dx = sin(bearingRad).toFloat() * distFt.toFloat() * pixelsPerFoot
             val dy = -cos(bearingRad).toFloat() * distFt.toFloat() * pixelsPerFoot
 
@@ -209,31 +287,39 @@ class ThrowGraphView @JvmOverloads constructor(
 
             val color = sessionColorMap[throw_.sessionId] ?: discPaint.color
 
-            // Line from origin to disc
             linePaint.color = (color and 0x00FFFFFF) or 0x60000000
             canvas.drawLine(cx, cy, tx, ty, linePaint)
 
-            // Disc dot
             discPaint.color = color
             canvas.drawCircle(tx, ty, 10f, discPaint)
 
-            // Throw label
             labelPaint.color = color
-            canvas.drawText(
-                "#${throw_.throwNumber}",
-                tx,
-                ty - 14f,
-                labelPaint
-            )
+            canvas.drawText("#${throw_.throwNumber}", tx, ty - 14f, labelPaint)
         }
 
-        // Origin dot (on top)
+        // Origin dot (on top of everything)
         canvas.drawCircle(cx, cy, 14f, originPaint)
 
         canvas.restore()
 
         // Legend (fixed, outside transform)
         drawLegend(canvas, sessions, sessionColorMap)
+
+        // Aim label overlay (fixed position, bottom-left)
+        if (aim != null) {
+            drawAimOverlay(canvas, aim)
+        }
+    }
+
+    /**
+     * Returns the bearing of [rawBearing] relative to [referenceBearing],
+     * in the range [-180, 180]. Positive = clockwise from reference.
+     */
+    private fun relativeBearing(rawBearing: Double, referenceBearing: Double): Double {
+        var rel = rawBearing - referenceBearing
+        while (rel > 180) rel -= 360
+        while (rel < -180) rel += 360
+        return rel
     }
 
     private fun drawLegend(
@@ -256,6 +342,16 @@ class ThrowGraphView @JvmOverloads constructor(
         }
     }
 
+    private fun drawAimOverlay(canvas: Canvas, bearing: Float) {
+        val label = "Aim: %.0f° %s".format(bearing, bearingToCardinal(bearing))
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#FFFFD700")
+            textSize = 26f
+            textAlign = Paint.Align.LEFT
+        }
+        canvas.drawText(label, 16f, height - 16f, p)
+    }
+
     private fun drawEmptyState(canvas: Canvas) {
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#80FFFFFF")
@@ -263,6 +359,11 @@ class ThrowGraphView @JvmOverloads constructor(
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText("No throws recorded yet", width / 2f, height / 2f, p)
+    }
+
+    private fun bearingToCardinal(bearing: Float): String {
+        val dirs = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+        return dirs[((bearing + 22.5f) / 45f).toInt() % 8]
     }
 
     private fun resetView() {

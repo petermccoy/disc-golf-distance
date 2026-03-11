@@ -80,6 +80,97 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Aim Direction Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAim"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Aim Direction"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <!-- Live compass bearing (shown when not set) -->
+                        <TextView
+                            android:id="@+id/tvLiveCompass"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="— °  (acquiring…)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace" />
+
+                        <!-- Set Aim button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSetAim"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="Set Aim"
+                            android:textSize="12sp"
+                            app:icon="@drawable/ic_compass"
+                            app:iconSize="16dp"
+                            app:iconGravity="textStart" />
+
+                    </LinearLayout>
+
+                    <!-- Aim set row (visible only when aim is locked) -->
+                    <LinearLayout
+                        android:id="@+id/rowAimSet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="6dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tvAimSet"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="@color/accuracy_good"
+                            android:textSize="13sp"
+                            android:fontFamily="monospace" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearAim"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="Clear"
+                            android:textSize="12sp"
+                            android:textColor="@color/accuracy_poor" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Start Location Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStartLocation"
