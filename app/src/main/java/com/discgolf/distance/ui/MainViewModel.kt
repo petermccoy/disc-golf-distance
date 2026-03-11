@@ -40,6 +40,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastThrow = MutableLiveData<DiscThrow?>()
     val lastThrow: LiveData<DiscThrow?> get() = _lastThrow
 
+    private val _lastThrowIsPersonalBest = MutableLiveData(false)
+    val lastThrowIsPersonalBest: LiveData<Boolean> get() = _lastThrowIsPersonalBest
+
     private val _currentAccuracy = MutableLiveData<Float>()
     val currentAccuracy: LiveData<Float> get() = _currentAccuracy
 
@@ -102,7 +105,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         viewModelScope.launch {
+            val previousBest = repository.getMaxDistance() ?: 0.0
+            val isPB = distanceMeters > previousBest
             repository.insert(discThrow)
+            _lastThrowIsPersonalBest.postValue(isPB)
             _lastThrow.postValue(discThrow)
             _appState.postValue(AppState.THROW_RECORDED)
         }

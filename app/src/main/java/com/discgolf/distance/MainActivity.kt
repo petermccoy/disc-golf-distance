@@ -330,12 +330,14 @@ class MainActivity : AppCompatActivity() {
     private fun showThrowResult(discThrow: DiscThrow) {
         val distFt = discThrow.distanceFeet
         val distM  = discThrow.distanceMeters
-        val msg = "Distance: %.1f ft  (%.1f m)\nThrow #%d in session %s".format(
+        val isPB = viewModel.lastThrowIsPersonalBest.value == true
+        val pbLine = if (isPB) "New personal best!\n\n" else ""
+        val msg = pbLine + "Distance: %.1f ft  (%.1f m)\nThrow #%d in session %s".format(
             distFt, distM, discThrow.throwNumber, discThrow.sessionId
         )
 
         AlertDialog.Builder(this)
-            .setTitle("Throw Recorded!")
+            .setTitle(if (isPB) "Throw Recorded! ★" else "Throw Recorded!")
             .setMessage(msg)
             .setPositiveButton("Next Disc (same start)") { _, _ ->
                 viewModel.continueNextDisc()
