@@ -1,0 +1,15 @@
+# Gradle build cache and wrapper
+.gradle/
+build/
+app/build/
+
+# Local Android SDK config
+local.properties
+
+# IDE files
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
