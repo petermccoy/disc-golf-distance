@@ -48,17 +48,20 @@ class DiscManagerActivity : AppCompatActivity() {
     fun showAddDiscDialog() {
         val db = DialogAddDiscBinding.inflate(layoutInflater)
 
-        // Configure slider ranges (valueTo must be set before valueFrom when valueFrom > default 0)
-        db.sliderSpeed.valueTo = 14f; db.sliderSpeed.valueFrom = 1f;  db.sliderSpeed.stepSize = 1f
-        db.sliderGlide.valueTo = 7f;  db.sliderGlide.valueFrom = 1f;  db.sliderGlide.stepSize = 1f
-        db.sliderTurn.valueFrom = -5f; db.sliderTurn.valueTo   = 1f;  db.sliderTurn.stepSize  = 1f
-        db.sliderFade.valueTo = 5f;   db.sliderFade.valueFrom  = 0f;  db.sliderFade.stepSize  = 1f
+        // Configure each slider: expand valueTo first, set value, then narrow valueFrom, then stepSize.
+        // value must always remain within [valueFrom, valueTo] at every step or Slider throws.
+        db.sliderSpeed.valueTo   = 14f; db.sliderSpeed.value = 7f
+        db.sliderSpeed.valueFrom = 1f;  db.sliderSpeed.stepSize = 1f
 
-        // Defaults
-        db.sliderSpeed.value = 7f
-        db.sliderGlide.value = 5f
-        db.sliderTurn.value = -1f
-        db.sliderFade.value = 1f
+        db.sliderGlide.valueTo   = 7f;  db.sliderGlide.value = 5f
+        db.sliderGlide.valueFrom = 1f;  db.sliderGlide.stepSize = 1f
+
+        // Turn: valueFrom=-5 is safe first because default valueTo=1 and default value=0 >= -5
+        db.sliderTurn.valueFrom  = -5f; db.sliderTurn.value = -1f
+        db.sliderTurn.valueTo    = 1f;  db.sliderTurn.stepSize = 1f
+
+        db.sliderFade.valueTo    = 5f;  db.sliderFade.value = 1f
+        db.sliderFade.stepSize   = 1f
         updateLabel(db.tvSpeedVal, "Speed", 7)
         updateLabel(db.tvGlideVal, "Glide", 5)
         updateTurnLabel(db.tvTurnVal, -1)
