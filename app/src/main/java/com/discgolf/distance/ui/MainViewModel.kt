@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.discgolf.distance.data.Disc
+import com.discgolf.distance.data.DiscRepository
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.data.ThrowRepository
 import kotlinx.coroutines.launch
@@ -28,8 +30,10 @@ data class LocationSnapshot(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = ThrowRepository(application)
+    private val discRepository = DiscRepository(application)
 
     val allThrows: LiveData<List<DiscThrow>> = repository.allThrows
+    val allDiscs: LiveData<List<Disc>> = discRepository.allDiscs
 
     private val _appState = MutableLiveData(AppState.IDLE)
     val appState: LiveData<AppState> get() = _appState
@@ -81,7 +85,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _statusMessage.value = "Start marked – accuracy ±${location.accuracy.toInt()} m\nMove to disc landing spot, then tap End Location."
     }
 
-    fun recordEnd(location: Location) {
+    fun recordEnd(location: Location, discId: Long? = null) {
         val start = startSnapshot ?: return
         val endTime = location.time.takeIf { it > 0 } ?: System.currentTimeMillis()
 
@@ -101,7 +105,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             endLng = location.longitude,
             endTimeMs = endTime,
             distanceMeters = distanceMeters,
-            flightTimeMs = endTime - start.timeMs
+            flightTimeMs = endTime - start.timeMs,
+            discId = discId
         )
 
         viewModelScope.launch {
@@ -141,6 +146,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteThrow(discThrow: DiscThrow) {
         viewModelScope.launch { repository.delete(discThrow) }
+    }
+
+    fun insertDisc(disc: Disc) {
+        viewModelScope.launch { discRepository.insert(disc) }
+    }
+
+    fun deleteDisc(disc: Disc) {
+        viewModelScope.launch { discRepository.delete(disc) }
     }
 
     fun getStartSnapshot(): LocationSnapshot? = startSnapshot

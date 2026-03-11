@@ -1,10 +1,12 @@
 package com.discgolf.distance.ui
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.discgolf.distance.data.Disc
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.databinding.ItemThrowBinding
 import java.text.SimpleDateFormat
@@ -13,6 +15,13 @@ import java.util.*
 class ThrowAdapter(
     private val onDelete: (DiscThrow) -> Unit
 ) : ListAdapter<DiscThrow, ThrowAdapter.ViewHolder>(DIFF) {
+
+    private var discMap: Map<Long, Disc> = emptyMap()
+
+    fun updateDiscs(discs: List<Disc>) {
+        discMap = discs.associateBy { it.id }
+        notifyItemRangeChanged(0, currentList.size)
+    }
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<DiscThrow>() {
@@ -42,6 +51,15 @@ class ThrowAdapter(
             tvTime.text         = timeFmt.format(Date(item.startTimeMs))
             tvFlightTime.text   = formatDuration(item.flightTimeMs)
             btnDelete.setOnClickListener { onDelete(item) }
+
+            // Disc name
+            val disc = item.discId?.let { discMap[it] }
+            if (disc != null) {
+                tvDiscName.text = disc.name
+                tvDiscName.visibility = View.VISIBLE
+            } else {
+                tvDiscName.visibility = View.GONE
+            }
 
             // Alternating row color for readability
             val bg = if (position % 2 == 0)

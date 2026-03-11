@@ -15,6 +15,11 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_manage_discs"
+        android:title="My Discs"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_new_session"
         android:title="New Session"
         app:showAsAction="never" />

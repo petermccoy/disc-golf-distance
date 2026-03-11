@@ -21,7 +21,9 @@ data class DiscThrow(
     val endTimeMs: Long,
 
     val distanceMeters: Double,     // Calculated Haversine distance
-    val flightTimeMs: Long          // endTimeMs - startTimeMs
+    val flightTimeMs: Long,         // endTimeMs - startTimeMs
+
+    val discId: Long? = null        // FK to discs.id; null = no disc selected
 ) {
     companion object {
         /**

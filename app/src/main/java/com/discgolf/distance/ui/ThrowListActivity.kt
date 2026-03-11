@@ -143,6 +143,10 @@ class ThrowListActivity : AppCompatActivity() {
 
             applyFilters()
         }
+
+        viewModel.allDiscs.observe(this) { discs ->
+            adapter.updateDiscs(discs)
+        }
     }
 
     private fun displaySorted() {

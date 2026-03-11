@@ -15,15 +15,21 @@ import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.databinding.ActivityMainBinding
 import com.discgolf.distance.ui.AppState
+import com.discgolf.distance.ui.DiscManagerActivity
+import com.discgolf.distance.ui.DiscSelectAdapter
 import com.discgolf.distance.ui.MainViewModel
 import com.discgolf.distance.ui.ThrowGraphActivity
 import com.discgolf.distance.ui.ThrowListActivity
@@ -92,6 +98,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ── Disc selection state ──────────────────────────────────────────────────
+
+    private var pendingEndLocation: Location? = null
+    private var discSelectAdapter: DiscSelectAdapter? = null
+    private var discSelectionDialog: AlertDialog? = null
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,6 +155,10 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
                 true
             }
+            R.id.action_manage_discs -> {
+                startActivity(Intent(this, DiscManagerActivity::class.java))
+                true
+            }
             R.id.action_new_session -> {
                 confirmNewSession()
                 true
@@ -187,6 +203,10 @@ class MainActivity : AppCompatActivity() {
         viewModel.sessionTargetBearing.observe(this) { bearing ->
             updateAimDisplay(bearing)
         }
+        // Update disc selection list in real-time (e.g. after adding a disc)
+        viewModel.allDiscs.observe(this) { discs ->
+            discSelectAdapter?.submitList(discs)
+        }
     }
 
     private fun applyState(state: AppState) {
@@ -221,7 +241,6 @@ class MainActivity : AppCompatActivity() {
     // ── Aim direction UI ──────────────────────────────────────────────────────
 
     private fun updateLiveCompassDisplay(bearing: Float) {
-        // Only show live reading if aim is not yet set
         if (viewModel.sessionTargetBearing.value == null) {
             binding.tvLiveCompass.text = "%.0f°  %s — point at basket, tap Set Aim".format(
                 bearing, bearingToCardinal(bearing)
@@ -317,12 +336,63 @@ class MainActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Low GPS Accuracy")
                 .setMessage("Current accuracy is ±%.0f m. Mark end anyway?".format(loc.accuracy))
-                .setPositiveButton("Mark End") { _, _ -> viewModel.recordEnd(loc) }
+                .setPositiveButton("Mark End") { _, _ -> showDiscSelection(loc) }
                 .setNegativeButton("Wait", null)
                 .show()
         } else {
-            viewModel.recordEnd(loc)
+            showDiscSelection(loc)
         }
+    }
+
+    // ── Disc selection ────────────────────────────────────────────────────────
+
+    private fun showDiscSelection(loc: Location) {
+        pendingEndLocation = loc
+
+        val view = layoutInflater.inflate(R.layout.dialog_select_disc, null)
+        val rv       = view.findViewById<RecyclerView>(R.id.rvSelectDiscs)
+        val tvEmpty  = view.findViewById<TextView>(R.id.tvNoDiscs)
+        val btnNone  = view.findViewById<Button>(R.id.btnNoDisc)
+        val btnAdd   = view.findViewById<Button>(R.id.btnAddNewDisc)
+
+        val adapter = DiscSelectAdapter { disc ->
+            discSelectionDialog?.dismiss()
+            viewModel.recordEnd(loc, disc.id)
+        }
+        discSelectAdapter = adapter
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = adapter
+
+        val discs = viewModel.allDiscs.value ?: emptyList()
+        adapter.submitList(discs)
+        tvEmpty.visibility = if (discs.isEmpty()) View.VISIBLE else View.GONE
+        rv.visibility      = if (discs.isEmpty()) View.GONE   else View.VISIBLE
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Select Disc")
+            .setView(view)
+            .create()
+
+        discSelectionDialog = dialog
+
+        btnNone.setOnClickListener {
+            dialog.dismiss()
+            viewModel.recordEnd(loc, null)
+        }
+
+        btnAdd.setOnClickListener {
+            // Navigate to disc manager; user returns to AWAITING_END state
+            dialog.dismiss()
+            startActivity(Intent(this, DiscManagerActivity::class.java))
+        }
+
+        dialog.setOnDismissListener {
+            discSelectionDialog = null
+            discSelectAdapter = null
+            pendingEndLocation = null
+        }
+
+        dialog.show()
     }
 
     // ── Post-throw dialog ─────────────────────────────────────────────────────
@@ -332,8 +402,11 @@ class MainActivity : AppCompatActivity() {
         val distM  = discThrow.distanceMeters
         val isPB = viewModel.lastThrowIsPersonalBest.value == true
         val pbLine = if (isPB) "New personal best!\n\n" else ""
-        val msg = pbLine + "Distance: %.1f ft  (%.1f m)\nThrow #%d in session %s".format(
-            distFt, distM, discThrow.throwNumber, discThrow.sessionId
+        val discLine = discThrow.discId?.let { id ->
+            viewModel.allDiscs.value?.find { it.id == id }?.let { "\nDisc: ${it.name}" } ?: ""
+        } ?: ""
+        val msg = pbLine + "Distance: %.1f ft  (%.1f m)\nThrow #%d in session %s%s".format(
+            distFt, distM, discThrow.throwNumber, discThrow.sessionId, discLine
         )
 
         AlertDialog.Builder(this)
