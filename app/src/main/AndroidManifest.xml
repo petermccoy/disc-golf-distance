@@ -35,7 +35,6 @@
         <activity
             android:name=".ui.ThrowGraphActivity"
             android:exported="false"
-            android:screenOrientation="landscape"
             android:parentActivityName=".MainActivity" />
 
     </application>

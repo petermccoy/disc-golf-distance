@@ -39,7 +39,10 @@ class ThrowGraphActivity : AppCompatActivity() {
         if (intent.hasExtra(EXTRA_TARGET_BEARING)) {
             targetBearing = intent.getFloatExtra(EXTRA_TARGET_BEARING, 0f)
             binding.graphView.targetBearing = targetBearing
-            // Arc toggle becomes available
+            // Default to arc mode when a bearing is set
+            arcModeEnabled = true
+            binding.graphView.arcMode = true
+            binding.btnArcToggle.text = "90°"
             binding.btnArcToggle.isEnabled = true
             binding.btnArcToggle.alpha = 1f
         }

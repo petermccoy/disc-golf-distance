@@ -51,6 +51,12 @@ class ThrowGraphView @JvmOverloads constructor(
         color = Color.parseColor("#40FFFFFF")
         strokeWidth = 1f
     }
+    // Lighter, thinner ring for 50 ft intermediate marks (unlabeled)
+    private val ringPaint50 = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#20FFFFFF")
+        strokeWidth = 0.75f
+    }
     private val ringLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#AAFFFFFF")
         textSize = 28f
@@ -71,7 +77,7 @@ class ThrowGraphView @JvmOverloads constructor(
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 26f
+        textSize = 20f
         textAlign = Paint.Align.CENTER
     }
     private val bgPaint = Paint().apply {
@@ -214,17 +220,28 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawPath(wedgePath, aimFillPaint)
         }
 
-        // Draw rings (full circles or arcs)
+        // Draw rings: 50 ft intermediate (lighter, unlabeled) + 100 ft major (labeled)
         for (i in 1..numRings) {
+            // 50 ft intermediate ring between (i-1)*100 and i*100
+            val midFt = (i - 1) * ringStep + 50.0
+            val r50 = (midFt * pixelsPerFoot).toFloat()
+            if (arcMode && aim != null) {
+                canvas.drawArc(RectF(cx - r50, cy - r50, cx + r50, cy + r50),
+                    -135f, 90f, false, ringPaint50)
+            } else {
+                canvas.drawCircle(cx, cy, r50, ringPaint50)
+            }
+
+            // 100 ft major ring
             val ringFt = i * ringStep
             val r = (ringFt * pixelsPerFoot).toFloat()
             if (arcMode && aim != null) {
-                val rect = RectF(cx - r, cy - r, cx + r, cy + r)
-                canvas.drawArc(rect, -135f, 90f, false, ringPaint)
+                canvas.drawArc(RectF(cx - r, cy - r, cx + r, cy + r),
+                    -135f, 90f, false, ringPaint)
             } else {
                 canvas.drawCircle(cx, cy, r, ringPaint)
             }
-            // Label at top of ring
+            // Label at top of major ring only
             canvas.drawText(
                 "${ringFt.toInt()} ft",
                 cx + 6f,
@@ -291,10 +308,10 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawLine(cx, cy, tx, ty, linePaint)
 
             discPaint.color = color
-            canvas.drawCircle(tx, ty, 10f, discPaint)
+            canvas.drawCircle(tx, ty, 6f, discPaint)
 
             labelPaint.color = color
-            canvas.drawText("#${throw_.throwNumber}", tx, ty - 14f, labelPaint)
+            canvas.drawText("#${throw_.throwNumber}", tx, ty - 10f, labelPaint)
         }
 
         // Origin dot (on top of everything)

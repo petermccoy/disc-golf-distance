@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.databinding.ActivityThrowListBinding
+import java.util.Calendar
 
 enum class SortField { DISTANCE, TIME, SESSION, THROW_NUMBER }
 enum class SortDir   { ASC, DESC }
@@ -23,7 +24,9 @@ class ThrowListActivity : AppCompatActivity() {
 
     private var sortField = SortField.TIME
     private var sortDir   = SortDir.DESC
-    private var allThrows: List<DiscThrow> = emptyList()
+    private var allThrowsRaw: List<DiscThrow> = emptyList()  // full DB set
+    private var allThrows: List<DiscThrow> = emptyList()     // after date+session filter
+    private var selectedSessionId: String? = null            // null = all sessions
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +38,7 @@ class ThrowListActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupSortSpinners()
+        setupFilterControls()
         observeData()
     }
 
@@ -82,11 +86,62 @@ class ThrowListActivity : AppCompatActivity() {
         binding.spinnerSortDir.onItemSelectedListener  = listener
     }
 
+    // ── Filter controls ───────────────────────────────────────────────────────
+
+    private fun setupFilterControls() {
+        binding.chipGroupDate.setOnCheckedStateChangeListener { _, _ -> applyFilters() }
+
+        binding.spinnerFilterSession.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?, v: View?, pos: Int, id: Long
+                ) {
+                    val sel = binding.spinnerFilterSession.selectedItem as? String ?: return
+                    selectedSessionId = if (sel == "All Sessions") null else sel
+                    applyFilters()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+    }
+
+    private fun selectedDateCutoff(): Long? {
+        val checkedId = binding.chipGroupDate.checkedChipId
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0);      set(Calendar.MILLISECOND, 0)
+        }
+        return when (checkedId) {
+            binding.chipToday.id -> cal.timeInMillis
+            binding.chipWeek.id  -> { cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek); cal.timeInMillis }
+            binding.chipMonth.id -> { cal.set(Calendar.DAY_OF_MONTH, 1); cal.timeInMillis }
+            else -> null
+        }
+    }
+
+    private fun applyFilters() {
+        val cutoff = selectedDateCutoff()
+        var filtered = allThrowsRaw
+        if (cutoff != null) filtered = filtered.filter { it.startTimeMs >= cutoff }
+        selectedSessionId?.let { sid -> filtered = filtered.filter { it.sessionId == sid } }
+        allThrows = filtered
+        displaySorted()
+        binding.tvEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    // ── Data observation ──────────────────────────────────────────────────────
+
     private fun observeData() {
         viewModel.allThrows.observe(this) { throws ->
-            allThrows = throws
-            displaySorted()
-            binding.tvEmpty.visibility = if (throws.isEmpty()) View.VISIBLE else View.GONE
+            allThrowsRaw = throws
+
+            // Rebuild session spinner
+            val sessions = listOf("All Sessions") + throws.map { it.sessionId }.distinct()
+            val spinnerAdapter = ArrayAdapter(
+                this, android.R.layout.simple_spinner_dropdown_item, sessions
+            )
+            binding.spinnerFilterSession.adapter = spinnerAdapter
+
+            applyFilters()
         }
     }
 
@@ -100,12 +155,12 @@ class ThrowListActivity : AppCompatActivity() {
 
         adapter.submitList(sorted)
 
-        // Summary row
+        // Summary row reflects the filtered set
         if (allThrows.isNotEmpty()) {
             val best = allThrows.maxOf { it.distanceFeet }
             val avg  = allThrows.map { it.distanceFeet }.average()
             binding.tvSummary.text =
-                "Total: ${allThrows.size} throws  |  Best: %.1f ft  |  Avg: %.1f ft".format(best, avg)
+                "${allThrows.size} throws  |  Best: %.1f ft  |  Avg: %.1f ft".format(best, avg)
             binding.tvSummary.visibility = View.VISIBLE
         } else {
             binding.tvSummary.visibility = View.GONE
