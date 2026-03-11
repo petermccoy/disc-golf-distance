@@ -79,6 +79,10 @@ if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
     fi
 fi
 
+# Determine the location of the gradle wrapper jar.
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+CLASSPATH="$SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar"
+
 # Collect all arguments for the java command;
 #   * $DEFAULT_JVM_OPTS, $JAVA_OPTS, and $GRADLE_OPTS can contain fragments of
 #     shell script including quotes and variable substitutions, so put them in
@@ -104,9 +108,5 @@ eval set -- $(
   sed ' s~[^-[:alnum:]+,./:=@_]~\\&~g; ' |
   tr '\n' ' '
 ) '"$@"'
-
-# Determine the location of the gradle wrapper jar.
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-CLASSPATH="$SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar"
 
 exec "$JAVACMD" "$@"
