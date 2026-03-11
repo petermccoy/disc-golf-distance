@@ -69,7 +69,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipAll"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="All"
@@ -77,21 +77,21 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipToday"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Today" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipWeek"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Week" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMonth"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Month" />
@@ -101,7 +101,7 @@
         <!-- Arc mode toggle (enabled only when aim is set) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnArcToggle"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:text="360°"
