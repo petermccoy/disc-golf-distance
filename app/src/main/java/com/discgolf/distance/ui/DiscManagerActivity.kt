@@ -48,6 +48,12 @@ class DiscManagerActivity : AppCompatActivity() {
     fun showAddDiscDialog() {
         val db = DialogAddDiscBinding.inflate(layoutInflater)
 
+        // Configure slider ranges (must be set before value)
+        db.sliderSpeed.valueFrom = 1f;  db.sliderSpeed.valueTo = 14f; db.sliderSpeed.stepSize = 1f
+        db.sliderGlide.valueFrom = 1f;  db.sliderGlide.valueTo = 7f;  db.sliderGlide.stepSize = 1f
+        db.sliderTurn.valueFrom  = -5f; db.sliderTurn.valueTo  = 1f;  db.sliderTurn.stepSize  = 1f
+        db.sliderFade.valueFrom  = 0f;  db.sliderFade.valueTo  = 5f;  db.sliderFade.stepSize  = 1f
+
         // Defaults
         db.sliderSpeed.value = 7f
         db.sliderGlide.value = 5f
