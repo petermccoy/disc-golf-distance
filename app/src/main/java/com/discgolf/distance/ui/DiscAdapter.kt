@@ -10,6 +10,7 @@ import com.discgolf.distance.data.Disc
 import com.discgolf.distance.databinding.ItemDiscBinding
 
 class DiscAdapter(
+    private val onEdit: (Disc) -> Unit,
     private val onDelete: (Disc) -> Unit
 ) : ListAdapter<Disc, DiscAdapter.VH>(DIFF) {
 
@@ -39,6 +40,7 @@ class DiscAdapter(
             d.setColor(disc.colorArgb)
             viewDiscColor.background = d
 
+            btnEditDisc.setOnClickListener { onEdit(disc) }
             btnDeleteDisc.setOnClickListener { onDelete(disc) }
         }
     }

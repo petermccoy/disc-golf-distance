@@ -20,7 +20,7 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Row 1: Session filter spinner + Stats -->
+    <!-- Row 1: Session + Disc spinners -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -34,19 +34,29 @@
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="6dp" />
 
-        <TextView
-            android:id="@+id/tvStats"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="monospace" />
+        <Spinner
+            android:id="@+id/spinnerDisc"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
-    <!-- Row 2: Date filter chips + Arc toggle -->
+    <!-- Row 2: Stats -->
+    <TextView
+        android:id="@+id/tvStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:background="@color/toolbar_bg" />
+
+    <!-- Row 3: Date chips + Arc toggle + Disc-color toggle -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -58,7 +68,6 @@
         android:background="@color/toolbar_bg"
         android:gravity="center_vertical">
 
-        <!-- Date filter chip group -->
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupDate"
             android:layout_width="0dp"
@@ -98,7 +107,7 @@
 
         </com.google.android.material.chip.ChipGroup>
 
-        <!-- Arc mode toggle (enabled only when aim is set) -->
+        <!-- Arc mode toggle (always enabled) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnArcToggle"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -106,9 +115,17 @@
             android:layout_height="36dp"
             android:text="360°"
             android:textSize="12sp"
-            android:layout_marginStart="8dp"
-            android:enabled="false"
-            android:alpha="0.4" />
+            android:layout_marginStart="6dp" />
+
+        <!-- Disc color toggle -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDiscColor"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Disc ●"
+            android:textSize="12sp"
+            android:layout_marginStart="4dp" />
 
     </LinearLayout>
 

@@ -156,6 +156,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { discRepository.delete(disc) }
     }
 
+    fun updateDisc(disc: Disc) {
+        viewModelScope.launch { discRepository.update(disc) }
+    }
+
     fun getStartSnapshot(): LocationSnapshot? = startSnapshot
 
     // ── Helpers ───────────────────────────────────────────────────────────────

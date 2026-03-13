@@ -7,6 +7,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import com.discgolf.distance.data.Disc
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.databinding.ActivityThrowGraphBinding
 import java.util.Calendar
@@ -21,8 +22,12 @@ class ThrowGraphActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private var allThrows: List<DiscThrow> = emptyList()
-    private var selectedSessionId: String? = null  // null = all sessions
-    private var arcModeEnabled = false
+    private var allDiscs:  List<Disc>      = emptyList()
+
+    private var selectedSessionId: String? = null   // null = all sessions
+    private var selectedDiscId:    Long?   = null   // null = all discs
+    private var arcModeEnabled    = false
+    private var colorByDiscEnabled = false
 
     /** Bearing received from MainActivity (set when user aimed at basket). */
     private var targetBearing: Float? = null
@@ -35,21 +40,20 @@ class ThrowGraphActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Throw Graph"
 
-        // Pick up aim direction passed from MainActivity
         if (intent.hasExtra(EXTRA_TARGET_BEARING)) {
             targetBearing = intent.getFloatExtra(EXTRA_TARGET_BEARING, 0f)
             binding.graphView.targetBearing = targetBearing
-            // Default to arc mode when a bearing is set
+            // Default to arc mode when a bearing was set
             arcModeEnabled = true
             binding.graphView.arcMode = true
-            binding.btnArcToggle.text = "90°"
-            binding.btnArcToggle.isEnabled = true
-            binding.btnArcToggle.alpha = 1f
+            binding.btnArcToggle.text = "60°"
         }
 
         setupSessionSpinner()
+        setupDiscSpinner()
         setupDateFilter()
         setupArcToggle()
+        setupDiscColorToggle()
         observeData()
 
         binding.tvHint.text = "Pinch to zoom  •  Drag to pan  •  Double-tap to reset"
@@ -76,32 +80,44 @@ class ThrowGraphActivity : AppCompatActivity() {
             }
     }
 
+    // ── Disc spinner ──────────────────────────────────────────────────────────
+
+    private fun setupDiscSpinner() {
+        binding.spinnerDisc.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?, v: View?, pos: Int, id: Long
+                ) {
+                    selectedDiscId = if (pos == 0) null else allDiscs.getOrNull(pos - 1)?.id
+                    applyFilters()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+    }
+
+    private fun rebuildDiscSpinner() {
+        val names = listOf("All Discs") + allDiscs.map { it.name }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+        binding.spinnerDisc.adapter = adapter
+    }
+
     // ── Date filter chips ─────────────────────────────────────────────────────
 
     private fun setupDateFilter() {
         binding.chipGroupDate.setOnCheckedStateChangeListener { _, _ -> applyFilters() }
     }
 
-    /** Returns start-of-day/week/month epoch ms, or null for "All time". */
     private fun selectedDateCutoff(): Long? {
         val checkedId = binding.chipGroupDate.checkedChipId
         val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0);      set(Calendar.MILLISECOND, 0)
         }
         return when (checkedId) {
             binding.chipToday.id -> cal.timeInMillis
-            binding.chipWeek.id  -> {
-                cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
-                cal.timeInMillis
-            }
-            binding.chipMonth.id -> {
-                cal.set(Calendar.DAY_OF_MONTH, 1)
-                cal.timeInMillis
-            }
-            else -> null  // chipAll or nothing
+            binding.chipWeek.id  -> { cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek); cal.timeInMillis }
+            binding.chipMonth.id -> { cal.set(Calendar.DAY_OF_MONTH, 1); cal.timeInMillis }
+            else -> null
         }
     }
 
@@ -110,27 +126,37 @@ class ThrowGraphActivity : AppCompatActivity() {
     private fun setupArcToggle() {
         binding.btnArcToggle.setOnClickListener {
             arcModeEnabled = !arcModeEnabled
-            binding.btnArcToggle.text = if (arcModeEnabled) "90°" else "360°"
+            binding.btnArcToggle.text = if (arcModeEnabled) "60°" else "360°"
             binding.graphView.arcMode = arcModeEnabled
+            // Disc color only makes sense in arc mode; reset if switching back
+            if (!arcModeEnabled && colorByDiscEnabled) {
+                colorByDiscEnabled = false
+                binding.btnDiscColor.isSelected = false
+                binding.btnDiscColor.alpha = 1f
+                binding.graphView.colorByDisc = false
+            }
         }
+    }
+
+    // ── Disc color toggle ─────────────────────────────────────────────────────
+
+    private fun setupDiscColorToggle() {
+        binding.btnDiscColor.setOnClickListener {
+            colorByDiscEnabled = !colorByDiscEnabled
+            binding.btnDiscColor.alpha = if (colorByDiscEnabled) 1f else 0.5f
+            binding.graphView.colorByDisc = colorByDiscEnabled
+        }
+        binding.btnDiscColor.alpha = 0.5f  // starts dim (off)
     }
 
     // ── Filters ───────────────────────────────────────────────────────────────
 
     private fun applyFilters() {
         val cutoff = selectedDateCutoff()
-
         var filtered = allThrows
-
-        // Date filter
-        if (cutoff != null) {
-            filtered = filtered.filter { it.startTimeMs >= cutoff }
-        }
-
-        // Session filter
-        selectedSessionId?.let { sid ->
-            filtered = filtered.filter { it.sessionId == sid }
-        }
+        if (cutoff != null) filtered = filtered.filter { it.startTimeMs >= cutoff }
+        selectedSessionId?.let { sid -> filtered = filtered.filter { it.sessionId == sid } }
+        selectedDiscId?.let    { did -> filtered = filtered.filter { it.discId == did } }
 
         binding.graphView.setThrows(filtered)
         updateStats(filtered)
@@ -143,12 +169,19 @@ class ThrowGraphActivity : AppCompatActivity() {
             allThrows = throws
 
             val sessions = listOf("All Sessions") + throws.map { it.sessionId }.distinct()
-            val adapter = ArrayAdapter(
+            binding.spinnerSession.adapter = ArrayAdapter(
                 this, android.R.layout.simple_spinner_dropdown_item, sessions
             )
-            binding.spinnerSession.adapter = adapter
-
             applyFilters()
+        }
+
+        viewModel.allDiscs.observe(this) { discs ->
+            allDiscs = discs
+            rebuildDiscSpinner()
+
+            // Pass disc info to graph view for coloring/legend
+            val infoMap = discs.associate { d -> d.id to Pair(d.name, d.colorArgb) }
+            binding.graphView.discInfoMap = infoMap
         }
     }
 

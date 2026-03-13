@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.discgolf.distance.data.Disc
 import com.discgolf.distance.data.DiscThrow
 import com.discgolf.distance.databinding.ActivityThrowListBinding
 import java.util.Calendar
@@ -25,8 +26,10 @@ class ThrowListActivity : AppCompatActivity() {
     private var sortField = SortField.TIME
     private var sortDir   = SortDir.DESC
     private var allThrowsRaw: List<DiscThrow> = emptyList()  // full DB set
-    private var allThrows: List<DiscThrow> = emptyList()     // after date+session filter
+    private var allThrows: List<DiscThrow> = emptyList()     // after filters
+    private var allDiscs:  List<Disc>      = emptyList()
     private var selectedSessionId: String? = null            // null = all sessions
+    private var selectedDiscId:    Long?   = null            // null = all discs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +42,7 @@ class ThrowListActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSortSpinners()
         setupFilterControls()
+        setupDiscSpinner()
         observeData()
     }
 
@@ -104,6 +108,19 @@ class ThrowListActivity : AppCompatActivity() {
             }
     }
 
+    private fun setupDiscSpinner() {
+        binding.spinnerFilterDisc.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?, v: View?, pos: Int, id: Long
+                ) {
+                    selectedDiscId = if (pos == 0) null else allDiscs.getOrNull(pos - 1)?.id
+                    applyFilters()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+    }
+
     private fun selectedDateCutoff(): Long? {
         val checkedId = binding.chipGroupDate.checkedChipId
         val cal = Calendar.getInstance().apply {
@@ -123,6 +140,7 @@ class ThrowListActivity : AppCompatActivity() {
         var filtered = allThrowsRaw
         if (cutoff != null) filtered = filtered.filter { it.startTimeMs >= cutoff }
         selectedSessionId?.let { sid -> filtered = filtered.filter { it.sessionId == sid } }
+        selectedDiscId?.let    { did -> filtered = filtered.filter { it.discId == did } }
         allThrows = filtered
         displaySorted()
         binding.tvEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
@@ -145,7 +163,13 @@ class ThrowListActivity : AppCompatActivity() {
         }
 
         viewModel.allDiscs.observe(this) { discs ->
+            allDiscs = discs
             adapter.updateDiscs(discs)
+
+            val names = listOf("All Discs") + discs.map { it.name }
+            binding.spinnerFilterDisc.adapter = ArrayAdapter(
+                this, android.R.layout.simple_spinner_dropdown_item, names
+            )
         }
     }
 

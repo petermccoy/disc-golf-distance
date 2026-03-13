@@ -12,4 +12,6 @@ class DiscRepository(context: Context) {
     suspend fun insert(disc: Disc): Long = dao.insert(disc)
 
     suspend fun delete(disc: Disc) = dao.delete(disc)
+
+    suspend fun update(disc: Disc) = dao.update(disc)
 }

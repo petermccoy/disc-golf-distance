@@ -18,6 +18,9 @@ interface DiscDao {
     @Query("SELECT * FROM discs ORDER BY name ASC")
     fun getAllDiscs(): LiveData<List<Disc>>
 
+    @Update
+    suspend fun update(disc: Disc)
+
     @Query("SELECT * FROM discs ORDER BY name ASC")
     suspend fun getAllDiscsSync(): List<Disc>
 }
