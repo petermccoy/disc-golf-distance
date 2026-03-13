@@ -11,14 +11,20 @@ import com.discgolf.distance.data.DiscThrow
 import kotlin.math.*
 
 /**
- * Canvas view that renders all throws relative to their start points.
+ * Canvas view that renders throws relative to their start points.
  *
- * - Distance rings every 100 ft (full circles or 60° arc when arcMode=true).
- * - Each throw is a dot at its relative (x,y) offset from origin.
- * - When targetBearing is set, that direction rotates to the top ("up").
- * - arcMode shows a ±30° wedge; when targetBearing is null, North is used.
- * - colorByDisc: colors throws by their disc color instead of session color.
- * - Supports pinch-zoom and pan.
+ * Full mode (arcMode=false):
+ *   - Origin at center, full 360° view.
+ *   - Throws colored by session (or disc if colorByDisc=true).
+ *
+ * Arc / directional mode (arcMode=true):
+ *   - Origin at the bottom of the screen; arcs extend upward like a radar.
+ *   - Each throw is normalized to "straight ahead = up" using the bearing
+ *     recorded for that individual throw (DiscThrow.targetBearing).
+ *   - Throws without a stored bearing fall back to the activity-level
+ *     targetBearing, or 0° (North) if neither is set.
+ *   - Only throws within ±30° of their intended target are shown.
+ *   - Zoom starts at 2.5×; double-tap resets to that level.
  */
 class ThrowGraphView @JvmOverloads constructor(
     context: Context,
@@ -30,22 +36,23 @@ class ThrowGraphView @JvmOverloads constructor(
 
     private var throws: List<DiscThrow> = emptyList()
 
-    /** Compass bearing (degrees) toward the basket. Null = North-up. */
+    /**
+     * Activity-level compass bearing toward the basket.
+     * Used as fallback for throws that don't have their own targetBearing stored.
+     * Null = no bearing set.
+     */
     var targetBearing: Float? = null
         set(value) { field = value; resetView() }
 
-    /** When true, show only a ±30° arc instead of full 360°. */
+    /** When true, show the ±30° directional arc view. */
     var arcMode: Boolean = false
         set(value) { field = value; resetView() }
 
-    /**
-     * When true, color each throw dot by its disc color instead of session color.
-     * Populate [discInfoMap] with disc data for colors and legend labels.
-     */
+    /** When true, color throws by disc color instead of session color. */
     var colorByDisc: Boolean = false
         set(value) { field = value; invalidate() }
 
-    /** discId → (display name, ARGB color). Populate from the disc list. */
+    /** discId → (display name, ARGB color). Populated from the disc list. */
     var discInfoMap: Map<Long, Pair<String, Int>> = emptyMap()
         set(value) { field = value; invalidate() }
 
@@ -117,7 +124,6 @@ class ThrowGraphView @JvmOverloads constructor(
         typeface = Typeface.DEFAULT_BOLD
     }
 
-    // Session colours (cycles)
     private val sessionColors = listOf(
         Color.parseColor("#00E676"),
         Color.parseColor("#40C4FF"),
@@ -154,17 +160,13 @@ class ThrowGraphView @JvmOverloads constructor(
         resetView()
     }
 
-    // ── Touch handling ────────────────────────────────────────────────────────
+    // ── Touch ─────────────────────────────────────────────────────────────────
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
-
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                lastTouchX = event.x
-                lastTouchY = event.y
-            }
+            MotionEvent.ACTION_DOWN -> { lastTouchX = event.x; lastTouchY = event.y }
             MotionEvent.ACTION_MOVE -> {
                 if (!scaleDetector.isInProgress) {
                     translateX += event.x - lastTouchX
@@ -189,15 +191,31 @@ class ThrowGraphView @JvmOverloads constructor(
             return
         }
 
-        // When arcMode is on and no bearing was set, fall back to North (0°).
-        val aim = if (arcMode) (targetBearing ?: 0f) else targetBearing
+        // ── Coordinate origin ──────────────────────────────────────────────
+        // Arc mode: origin at the bottom of the screen so throws fan upward.
+        // Full mode: origin at center.
+        val cx = width / 2f + translateX
+        val cy = if (arcMode) height * 0.85f + translateY
+                 else         height / 2f   + translateY
 
-        // In arcMode, filter to ±30° of the effective aim direction.
-        val visibleThrows = if (arcMode && aim != null) {
+        // ── Ring scale ─────────────────────────────────────────────────────
+        // Arc mode: rings fill the space above the bottom origin.
+        // Full mode: rings fit inside the square view.
+        val padding = 80f
+        val viewRadius = if (arcMode) height * 0.80f - padding
+                         else         (minOf(width, height) / 2f) - padding
+
+        // ── Effective global aim (for arc visual elements + fallback) ──────
+        // In arc mode we always have *some* reference; default to North(0°).
+        val globalAim: Float? = if (arcMode) (targetBearing ?: 0f) else targetBearing
+
+        // ── Filter throws in arc mode ──────────────────────────────────────
+        // Each throw is checked against its own stored targetBearing (or global aim as fallback).
+        val visibleThrows = if (arcMode) {
             throws.filter { t ->
+                val ref = t.targetBearing ?: globalAim?.toDouble() ?: 0.0
                 val raw = DiscThrow.calculateBearing(t.startLat, t.startLng, t.endLat, t.endLng)
-                val rel = relativeBearing(raw, aim.toDouble())
-                abs(rel) <= 30.0
+                abs(relativeBearing(raw, ref)) <= 30.0
             }
         } else {
             throws
@@ -208,24 +226,17 @@ class ThrowGraphView @JvmOverloads constructor(
         val ringStep = 100.0
         val numRings = ceil(maxFt / ringStep).toInt().coerceAtLeast(1)
         val maxRingFt = numRings * ringStep
-
-        val padding = 80f
-        val viewRadius = (minOf(width, height) / 2f) - padding
         val pixelsPerFoot = viewRadius / maxRingFt.toFloat()
-
-        val cx = width / 2f + translateX
-        val cy = height / 2f + translateY
 
         canvas.save()
         canvas.scale(scaleFactor, scaleFactor, cx, cy)
 
-        // Arc wedge fill (arcMode only) – 60° wide (±30°)
-        // Canvas angles: 0°=right, 90°=down, -90°=up.
-        // ±30° around "up" (-90°): left edge = -120°, right edge = -60°, sweep = 60°.
-        if (arcMode && aim != null) {
+        // ── Arc wedge fill ─────────────────────────────────────────────────
+        if (arcMode) {
             val outerR = (maxRingFt * pixelsPerFoot).toFloat()
             val wedgePath = Path().apply {
                 moveTo(cx, cy)
+                // ±30° around "up" (-90° canvas) → -120° to -60°, sweep 60°
                 arcTo(RectF(cx - outerR, cy - outerR, cx + outerR, cy + outerR),
                     -120f, 60f, false)
                 close()
@@ -233,20 +244,21 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawPath(wedgePath, aimFillPaint)
         }
 
-        // Distance rings: 50 ft intermediate (lighter) + 100 ft major (labeled)
+        // ── Distance rings ─────────────────────────────────────────────────
         for (i in 1..numRings) {
+            // 50 ft intermediate ring
             val midFt = (i - 1) * ringStep + 50.0
             val r50 = (midFt * pixelsPerFoot).toFloat()
-            if (arcMode && aim != null) {
+            if (arcMode) {
                 canvas.drawArc(RectF(cx - r50, cy - r50, cx + r50, cy + r50),
                     -120f, 60f, false, ringPaint50)
             } else {
                 canvas.drawCircle(cx, cy, r50, ringPaint50)
             }
-
+            // 100 ft major ring + label
             val ringFt = i * ringStep
             val r = (ringFt * pixelsPerFoot).toFloat()
-            if (arcMode && aim != null) {
+            if (arcMode) {
                 canvas.drawArc(RectF(cx - r, cy - r, cx + r, cy + r),
                     -120f, 60f, false, ringPaint)
             } else {
@@ -255,10 +267,9 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawText("${ringFt.toInt()} ft", cx + 6f, cy - r + ringLabelPaint.textSize, ringLabelPaint)
         }
 
-        // Axes / wedge edges
+        // ── Axes / bounding radii ──────────────────────────────────────────
         val axisLen = (maxRingFt * pixelsPerFoot).toFloat()
-        if (arcMode && aim != null) {
-            // Two bounding radii for the ±30° wedge
+        if (arcMode) {
             val leftRad  = Math.toRadians(-120.0)
             val rightRad = Math.toRadians(-60.0)
             canvas.drawLine(cx, cy,
@@ -272,8 +283,9 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawLine(cx, cy - axisLen, cx, cy + axisLen, axisPaint)
         }
 
-        // Aim arrow (target bearing = top of graph)
-        if (aim != null) {
+        // ── Aim arrow ─────────────────────────────────────────────────────
+        // In arc mode the arrow always points straight up ("intended direction").
+        if (globalAim != null) {
             val arrowLen = axisLen.coerceAtMost(viewRadius + padding * 0.6f)
             canvas.drawLine(cx, cy, cx, cy - arrowLen, aimPaint)
             val tip = 20f
@@ -282,23 +294,34 @@ class ThrowGraphView @JvmOverloads constructor(
             canvas.drawText("Basket", cx, cy - arrowLen - 12f, aimLabelPaint)
         }
 
-        // Build color lookup
+        // ── Color lookup maps ──────────────────────────────────────────────
         val sessions = throws.map { it.sessionId }.distinct()
         val sessionColorMap = sessions.mapIndexed { idx, id ->
             id to sessionColors[idx % sessionColors.size]
         }.toMap()
 
-        // Draw throw dots
+        // ── Throw dots ─────────────────────────────────────────────────────
         for (throw_ in visibleThrows) {
             val rawBearing = DiscThrow.calculateBearing(
                 throw_.startLat, throw_.startLng,
-                throw_.endLat, throw_.endLng
+                throw_.endLat,   throw_.endLng
             )
-            val displayBearing = if (aim != null) relativeBearing(rawBearing, aim.toDouble())
-                                 else rawBearing
+
+            // Rotate to screen: use this throw's own target bearing as reference.
+            // In full mode, use the global aim bearing (if set) or absolute bearing.
+            val refBearing: Double = when {
+                arcMode  -> throw_.targetBearing ?: globalAim?.toDouble() ?: 0.0
+                globalAim != null -> globalAim.toDouble()
+                else     -> 0.0  // no rotation in full mode without aim
+            }
+
+            val displayBearing = if (arcMode || globalAim != null)
+                relativeBearing(rawBearing, refBearing)
+            else
+                rawBearing
+
             val distFt = throw_.distanceFeet
             val bearingRad = Math.toRadians(displayBearing)
-
             val dx = sin(bearingRad).toFloat() * distFt.toFloat() * pixelsPerFoot
             val dy = -cos(bearingRad).toFloat() * distFt.toFloat() * pixelsPerFoot
 
@@ -313,34 +336,34 @@ class ThrowGraphView @JvmOverloads constructor(
 
             linePaint.color = (color and 0x00FFFFFF) or 0x60000000
             canvas.drawLine(cx, cy, tx, ty, linePaint)
-
             discPaint.color = color
             canvas.drawCircle(tx, ty, 6f, discPaint)
-
             labelPaint.color = color
             canvas.drawText("#${throw_.throwNumber}", tx, ty - 10f, labelPaint)
         }
 
         // Origin dot
         canvas.drawCircle(cx, cy, 14f, originPaint)
-
         canvas.restore()
 
-        // Fixed overlays (not affected by transform)
+        // ── Fixed overlays ─────────────────────────────────────────────────
         if (colorByDisc) {
             drawDiscLegend(canvas, visibleThrows)
         } else {
             drawSessionLegend(canvas, sessions, sessionColorMap)
         }
 
-        if (aim != null) {
-            drawAimOverlay(canvas, aim)
+        if (globalAim != null && !arcMode) {
+            drawAimOverlay(canvas, globalAim)
         }
     }
 
-    private fun relativeBearing(rawBearing: Double, referenceBearing: Double): Double {
-        var rel = rawBearing - referenceBearing
-        while (rel > 180) rel -= 360
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Returns bearing of [raw] relative to [ref], in [-180, 180]. */
+    private fun relativeBearing(raw: Double, ref: Double): Double {
+        var rel = raw - ref
+        while (rel > 180)  rel -= 360
         while (rel < -180) rel += 360
         return rel
     }
@@ -351,8 +374,7 @@ class ThrowGraphView @JvmOverloads constructor(
         colorMap: Map<String, Int>
     ) {
         if (sessions.size <= 1) return
-        val x = 16f
-        var y = 60f
+        val x = 16f; var y = 60f
         val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textSize = 28f }
         for (session in sessions) {
@@ -366,8 +388,7 @@ class ThrowGraphView @JvmOverloads constructor(
     private fun drawDiscLegend(canvas: Canvas, visibleThrows: List<DiscThrow>) {
         val discIds = visibleThrows.mapNotNull { it.discId }.distinct()
         if (discIds.isEmpty()) return
-        val x = 16f
-        var y = 60f
+        val x = 16f; var y = 60f
         val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         val txt = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textSize = 28f }
         for (id in discIds) {
@@ -404,7 +425,7 @@ class ThrowGraphView @JvmOverloads constructor(
     }
 
     private fun resetView() {
-        // Arc mode starts more zoomed-in so the ±30° wedge fills the screen.
+        // Arc mode starts zoomed in (2.5×) so nearby throws are prominent.
         scaleFactor = if (arcMode) 2.5f else 1f
         translateX  = 0f
         translateY  = 0f

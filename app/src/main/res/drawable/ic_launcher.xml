@@ -6,57 +6,52 @@
     android:viewportHeight="108">
 
     <!-- Background -->
-    <path android:fillColor="#1A2E1A"
+    <path android:fillColor="#0D1A0D"
         android:pathData="M0,0h108v108H0z"/>
 
-    <!-- Disc outer rim -->
+    <!-- 3D disc: shadow ring (offset down-right creates dark crescent at lower-right edge) -->
+    <path android:fillColor="#163F16"
+        android:pathData="M56,57m-44,0a44,44 0,1 1,88,0a44,44 0,1 1,-88,0"/>
+    <!-- Main disc body -->
     <path android:fillColor="#2E7D32"
-        android:pathData="M54,54m-46,0a46,46 0,1 1,92,0a46,46 0,1 1,-92,0"/>
-    <!-- Rim inner edge (darker band) -->
-    <path android:fillColor="#1B5E20"
         android:pathData="M54,54m-42,0a42,42 0,1 1,84,0a42,42 0,1 1,-84,0"/>
-    <!-- Flight plate -->
-    <path android:fillColor="#2E7D32"
-        android:pathData="M54,54m-38,0a38,38 0,1 1,76,0a38,38 0,1 1,-76,0"/>
-    <!-- Flight plate groove ring -->
-    <path android:fillColor="#245C27"
-        android:pathData="M54,54m-30,0a30,30 0,1 1,60,0a30,30 0,1 1,-60,0"/>
-    <!-- Dome -->
-    <path android:fillColor="#388E3C"
-        android:pathData="M54,54m-22,0a22,22 0,1 1,44,0a22,22 0,1 1,-44,0"/>
+    <!-- Top-left highlight blob (simulates light catching a convex disc) -->
+    <path android:fillColor="#3D9140" android:fillAlpha="0.80"
+        android:pathData="M50,48m-22,0a22,22 0,1 1,44,0a22,22 0,1 1,-44,0"/>
 
-    <!-- Vault dial ring (gold) -->
+    <!-- Gold dial ring -->
     <path android:fillColor="#F9A825"
-        android:pathData="M54,54m-16,0a16,16 0,1 1,32,0a16,16 0,1 1,-32,0"/>
-    <!-- Vault dial face (dark) -->
-    <path android:fillColor="#1A2E1A"
-        android:pathData="M54,54m-12,0a12,12 0,1 1,24,0a12,12 0,1 1,-24,0"/>
+        android:pathData="M54,54m-18,0a18,18 0,1 1,36,0a18,18 0,1 1,-36,0"/>
+    <!-- Dark dial face -->
+    <path android:fillColor="#0D1A0D"
+        android:pathData="M54,54m-15,0a15,15 0,1 1,30,0a15,15 0,1 1,-30,0"/>
 
-    <!-- Cardinal tick marks (0°/90°/180°/270°) – thicker -->
-    <path android:strokeColor="#F9A825" android:strokeWidth="2.5"
-        android:pathData="M54,42 L54,38"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="2.5"
-        android:pathData="M66,54 L70,54"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="2.5"
-        android:pathData="M54,66 L54,70"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="2.5"
-        android:pathData="M42,54 L38,54"/>
+    <!-- Major tick marks (8, every 45°) — gold lines radiating into dark face -->
+    <!-- 0°  N  --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M54.0,39.0 L54.0,42.0"/>
+    <!-- 45° NE --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M64.6,43.4 L62.5,45.5"/>
+    <!-- 90° E  --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M69.0,54.0 L66.0,54.0"/>
+    <!-- 135°SE --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M64.6,64.6 L62.5,62.5"/>
+    <!-- 180°S  --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M54.0,69.0 L54.0,66.0"/>
+    <!-- 225°SW --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M43.4,64.6 L45.5,62.5"/>
+    <!-- 270°W  --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M39.0,54.0 L42.0,54.0"/>
+    <!-- 315°NW --> <path android:strokeColor="#F9A825" android:strokeWidth="2.2" android:pathData="M43.4,43.4 L45.5,45.5"/>
 
-    <!-- Diagonal tick marks (45°/135°/225°/315°) – thinner -->
-    <path android:strokeColor="#F9A825" android:strokeWidth="1.5"
-        android:pathData="M62.5,45.5 L65.3,42.7"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="1.5"
-        android:pathData="M62.5,62.5 L65.3,65.3"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="1.5"
-        android:pathData="M45.5,62.5 L42.7,65.3"/>
-    <path android:strokeColor="#F9A825" android:strokeWidth="1.5"
-        android:pathData="M45.5,45.5 L42.7,42.7"/>
+    <!-- Minor tick marks (8, every 22.5°) — shorter -->
+    <!-- 22.5°  --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M59.7,40.1 L59.2,41.5"/>
+    <!-- 67.5°  --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M67.9,48.3 L66.5,48.8"/>
+    <!-- 112.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M67.9,59.7 L66.5,59.2"/>
+    <!-- 157.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M59.7,67.9 L59.2,66.5"/>
+    <!-- 202.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M48.3,67.9 L48.8,66.5"/>
+    <!-- 247.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M40.1,59.7 L41.5,59.2"/>
+    <!-- 292.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M40.1,48.3 L41.5,48.8"/>
+    <!-- 337.5° --> <path android:strokeColor="#F9A825" android:strokeWidth="1.3" android:pathData="M48.3,40.1 L48.8,41.5"/>
 
-    <!-- Center knob (bright gold) -->
+    <!-- North indicator: gold arrow pointing up on dial face -->
     <path android:fillColor="#F9A825"
-        android:pathData="M54,54m-4.5,0a4.5,4.5 0,1 1,9,0a4.5,4.5 0,1 1,-9,0"/>
-    <!-- Center knob highlight -->
-    <path android:fillColor="#FFE082"
-        android:pathData="M54,54m-2,0a2,2 0,1 1,4,0a2,2 0,1 1,-4,0"/>
+        android:pathData="M54,42 L52.5,52 L55.5,52 Z"/>
+
+    <!-- Center knob -->
+    <path android:fillColor="#F9A825"
+        android:pathData="M54,54m-2.5,0a2.5,2.5 0,1 1,5,0a2.5,2.5 0,1 1,-5,0"/>
 
 </vector>

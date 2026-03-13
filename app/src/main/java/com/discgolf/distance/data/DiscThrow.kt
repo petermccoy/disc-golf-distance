@@ -23,7 +23,8 @@ data class DiscThrow(
     val distanceMeters: Double,     // Calculated Haversine distance
     val flightTimeMs: Long,         // endTimeMs - startTimeMs
 
-    val discId: Long? = null        // FK to discs.id; null = no disc selected
+    val discId: Long? = null,       // FK to discs.id; null = no disc selected
+    val targetBearing: Double? = null  // Compass bearing toward the basket when this throw was made
 ) {
     companion object {
         /**

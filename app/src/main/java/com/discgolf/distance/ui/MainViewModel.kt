@@ -106,7 +106,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             endTimeMs = endTime,
             distanceMeters = distanceMeters,
             flightTimeMs = endTime - start.timeMs,
-            discId = discId
+            discId = discId,
+            targetBearing = _sessionTargetBearing.value?.toDouble()
         )
 
         viewModelScope.launch {
