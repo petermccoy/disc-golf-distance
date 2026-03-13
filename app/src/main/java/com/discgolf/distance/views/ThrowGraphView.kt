@@ -199,11 +199,19 @@ class ThrowGraphView @JvmOverloads constructor(
                  else         height / 2f   + translateY
 
         // ── Ring scale ─────────────────────────────────────────────────────
-        // Arc mode: rings fill the space above the bottom origin.
+        // Arc mode: largest ring must fit both the height above the origin
+        //   and the ±30° horizontal spread (spread = R * sin30° = R/2 per side,
+        //   so R ≤ width - padding to stay on-screen).
         // Full mode: rings fit inside the square view.
         val padding = 80f
-        val viewRadius = if (arcMode) height * 0.80f - padding
-                         else         (minOf(width, height) / 2f) - padding
+        val viewRadius = if (arcMode) {
+            val arcOriginY = height * 0.85f          // raw origin (no translate)
+            val r_vertical   = arcOriginY - padding  // arc top clears the top bar
+            val r_horizontal = width - padding       // ±30° fits horizontally
+            minOf(r_vertical, r_horizontal)
+        } else {
+            (minOf(width, height) / 2f) - padding
+        }
 
         // ── Effective global aim (for arc visual elements + fallback) ──────
         // In arc mode we always have *some* reference; default to North(0°).
@@ -425,8 +433,8 @@ class ThrowGraphView @JvmOverloads constructor(
     }
 
     private fun resetView() {
-        // Arc mode starts zoomed in (2.5×) so nearby throws are prominent.
-        scaleFactor = if (arcMode) 2.5f else 1f
+        // Scale 1:1 so all throws (up to max distance) are visible by default.
+        scaleFactor = 1f
         translateX  = 0f
         translateY  = 0f
         invalidate()
