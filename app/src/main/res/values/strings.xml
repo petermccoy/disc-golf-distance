@@ -4,4 +4,8 @@
     <string name="btn_start">Start Location</string>
     <string name="btn_end">End Location</string>
     <string name="status_ready">Tap Start Location to mark your throwing position.</string>
+    <string name="menu_manage_courses">Manage Courses</string>
+    <string name="fixed_start_label">Fixed Start (Tee)</string>
+    <string name="save_as_tee">📍 Save as Fixed Tee</string>
+    <string name="tee_scanning">Scanning for nearby tees…</string>
 </resources>

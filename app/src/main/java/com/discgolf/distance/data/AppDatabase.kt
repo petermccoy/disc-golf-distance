@@ -8,14 +8,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [DiscThrow::class, Disc::class],
-    version = 3,
+    entities = [DiscThrow::class, Disc::class, Course::class, CoursePoint::class],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun throwDao(): ThrowDao
     abstract fun discDao(): DiscDao
+    abstract fun courseDao(): CourseDao
 
     companion object {
         @Volatile
@@ -43,8 +44,38 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Store the basket bearing at the time each throw was made
                 db.execSQL("ALTER TABLE disc_throws ADD COLUMN targetBearing REAL")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS courses (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        option TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS course_points (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        courseId INTEGER NOT NULL,
+                        featureType TEXT NOT NULL,
+                        holeNumber INTEGER NOT NULL,
+                        lat REAL NOT NULL,
+                        lng REAL NOT NULL,
+                        notes TEXT NOT NULL DEFAULT '',
+                        FOREIGN KEY(courseId) REFERENCES courses(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_course_points_courseId ON course_points(courseId)"
+                )
             }
         }
 
@@ -55,7 +86,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "disc_golf_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance
