@@ -34,7 +34,9 @@ data class CoursePoint(
     val holeNumber: Int,       // 1–18  (0 = course-level feature)
     val lat: Double,
     val lng: Double,
-    val notes: String = ""
+    val notes: String = "",
+    /** Compass bearing (degrees) from this tee toward the basket; null = not set. */
+    val bearing: Double? = null
 ) {
     companion object {
         const val TYPE_TEE    = "TEE"

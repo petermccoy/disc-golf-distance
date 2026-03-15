@@ -204,6 +204,11 @@ class MainActivity : AppCompatActivity() {
             val snap = viewModel.getStartSnapshot() ?: return@setOnClickListener
             showSaveTeeDialog(snap.lat, snap.lng)
         }
+
+        // Abort an accidentally-started throw
+        binding.btnCancelStart.setOnClickListener {
+            viewModel.startNewLocation()
+        }
     }
 
     private fun observeViewModel() {
@@ -521,11 +526,25 @@ class MainActivity : AppCompatActivity() {
     // ── Save-as-tee dialog ────────────────────────────────────────────────────
 
     private fun showSaveTeeDialog(lat: Double, lng: Double) {
+        var capturedBearing: Double? = null
+
         val dialogView = layoutInflater.inflate(R.layout.dialog_save_tee, null)
-        val actvName   = dialogView.findViewById<AutoCompleteTextView>(R.id.actvCourseName)
-        val actvOption = dialogView.findViewById<AutoCompleteTextView>(R.id.actvCourseOption)
-        val actvHole   = dialogView.findViewById<AutoCompleteTextView>(R.id.actvHoleNumber)
-        val tvHint     = dialogView.findViewById<TextView>(R.id.tvUsedHolesHint)
+        val actvName         = dialogView.findViewById<AutoCompleteTextView>(R.id.actvCourseName)
+        val actvOption       = dialogView.findViewById<AutoCompleteTextView>(R.id.actvCourseOption)
+        val actvHole         = dialogView.findViewById<AutoCompleteTextView>(R.id.actvHoleNumber)
+        val tvHint           = dialogView.findViewById<TextView>(R.id.tvUsedHolesHint)
+        val tvBearingDisplay = dialogView.findViewById<TextView>(R.id.tvBearingDisplay)
+        val btnCapture       = dialogView.findViewById<android.view.View>(R.id.btnCaptureBearing)
+
+        btnCapture.setOnClickListener {
+            if (currentCompassBearing.isNaN()) {
+                Toast.makeText(this, "Compass not ready – point phone toward the basket.", Toast.LENGTH_SHORT).show()
+            } else {
+                capturedBearing = currentCompassBearing.toDouble()
+                tvBearingDisplay.text = "%.0f° %s".format(currentCompassBearing, bearingToCardinal(currentCompassBearing))
+                tvBearingDisplay.setTextColor(getColor(R.color.accuracy_good))
+            }
+        }
 
         // Pre-fill dropdowns from existing data
         viewModel.getCourseNamesAndOptions { names, options ->
@@ -594,10 +613,11 @@ class MainActivity : AppCompatActivity() {
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val name   = actvName.text.toString().trim()
-                val option = actvOption.text.toString().trim()
+                val name    = actvName.text.toString().trim()
+                val option  = actvOption.text.toString().trim()
                 val holeStr = actvHole.text.toString().trim()
-                val hole   = holeStr.toIntOrNull()
+                // dropdown text is "Hole 7" – extract the integer
+                val hole = holeStr.removePrefix("Hole ").trim().toIntOrNull()
 
                 when {
                     name.isBlank() -> {
@@ -611,7 +631,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     else -> {
                         dialog.dismiss()
-                        viewModel.saveTeePoint(lat, lng, name, option, hole) { teeInfo ->
+                        viewModel.saveTeePoint(lat, lng, name, option, hole, capturedBearing) { teeInfo ->
                             runOnUiThread {
                                 if (teeInfo != null) {
                                     Toast.makeText(

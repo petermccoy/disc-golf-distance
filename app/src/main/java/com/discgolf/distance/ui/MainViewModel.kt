@@ -167,6 +167,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun recordStart(location: Location) {
         val snap = if (_fixedStartEnabled.value == true && _selectedTee.value != null) {
             val tee = _selectedTee.value!!.point
+            // Auto-apply stored aim direction if the tee has one
+            tee.bearing?.let { setTargetBearing(it.toFloat()) }
             LocationSnapshot(
                 lat = tee.lat,
                 lng = tee.lng,
@@ -278,6 +280,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun saveTeePoint(
         lat: Double, lng: Double,
         courseName: String, courseOption: String, holeNumber: Int,
+        bearing: Double? = null,
         onResult: (TeeInfo?) -> Unit
     ) {
         viewModelScope.launch {
@@ -288,7 +291,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 featureType = CoursePoint.TYPE_TEE,
                 holeNumber = holeNumber,
                 lat = lat,
-                lng = lng
+                lng = lng,
+                bearing = bearing
             )
             val id = courseRepository.insertPoint(point)
             onResult(TeeInfo(point.copy(id = id), course))

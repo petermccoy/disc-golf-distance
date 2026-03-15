@@ -336,16 +336,35 @@
                         android:fontFamily="monospace"
                         tools:text="37.123456, -122.654321  ±3m" />
 
-                    <!-- Only visible when start is a live GPS point (not already a fixed tee) -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSaveAsTee"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginTop="10dp"
-                        android:text="📍 Save as Fixed Tee"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                    <!-- Row: Save as tee + Cancel start -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp">
+
+                        <!-- Only visible when start is a live GPS point (not already a fixed tee) -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSaveAsTee"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Save as Tee"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCancelStart"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="Cancel Start"
+                            android:textColor="@color/accuracy_poor"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
