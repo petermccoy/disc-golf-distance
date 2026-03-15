@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:minWidth="280dp">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvResultTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Distance + session info -->
+    <TextView
+        android:id="@+id/tvResultDetails"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Disc-to-basket summary (shown when basket is known) -->
+    <LinearLayout
+        android:id="@+id/rowEndToBasket"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Disc→Basket: "
+            android:textColor="@color/text_hint"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvEndToBasket"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/accent"
+            android:textSize="13sp"
+            android:fontFamily="monospace" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/card_bg"
+        android:layout_marginVertical="16dp" />
+
+    <!-- Action buttons – full-width, stacked -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNextDisc"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Next Disc (same start)"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRethrow"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Re-throw from disc position"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNewStart"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="New Start Location"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Only shown when no basket is saved for this hole -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveEndAsBasket"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save disc position as Basket"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDone"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:textColor="@color/text_secondary" />
+
+</LinearLayout>

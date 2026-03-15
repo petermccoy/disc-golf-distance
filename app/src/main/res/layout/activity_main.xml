@@ -171,6 +171,104 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Rangefinder Card (visible when a basket is known for the selected hole) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRangefinder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <!-- Header: hole label -->
+                    <TextView
+                        android:id="@+id/tvRangefinderLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="RANGEFINDER"
+                        android:textColor="@color/accent"
+                        android:textSize="11sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="6dp" />
+
+                    <!-- Big distance display -->
+                    <TextView
+                        android:id="@+id/tvRangeDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="— ft"
+                        android:textColor="@color/text_primary"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="2dp" />
+
+                    <!-- Metres sub-label -->
+                    <TextView
+                        android:id="@+id/tvRangeDistanceM"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="— m"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Bearing + elevation row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvRangeBearing"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="—° —"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tvRangeElevation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp"
+                            android:fontFamily="monospace"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                    <!-- Mark Basket button – shown when NO basket exists for this hole -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnMarkBasket"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:layout_marginTop="10dp"
+                        android:text="Mark Basket Location Here"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Fixed Start (Tee) Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardFixedStart"

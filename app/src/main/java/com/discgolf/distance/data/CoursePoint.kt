@@ -36,7 +36,9 @@ data class CoursePoint(
     val lng: Double,
     val notes: String = "",
     /** Compass bearing (degrees) from this tee toward the basket; null = not set. */
-    val bearing: Double? = null
+    val bearing: Double? = null,
+    /** Altitude in metres above WGS84 ellipsoid as reported by GPS; null = not captured. */
+    val altitudeM: Double? = null
 ) {
     companion object {
         const val TYPE_TEE    = "TEE"

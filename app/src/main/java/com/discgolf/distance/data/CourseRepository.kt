@@ -47,4 +47,7 @@ class CourseRepository(application: Application) {
         minLat: Double, maxLat: Double,
         minLng: Double, maxLng: Double
     ): List<CoursePoint> = dao.getTeesInBounds(minLat, maxLat, minLng, maxLng)
+
+    suspend fun getBasketForHole(courseId: Long, holeNumber: Int): CoursePoint? =
+        dao.getBasketForHole(courseId, holeNumber)
 }

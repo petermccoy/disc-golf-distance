@@ -79,6 +79,10 @@ interface CourseDao {
         minLng: Double, maxLng: Double
     ): List<CoursePoint>
 
+    /** Basket location for a specific hole – null if not yet saved. */
+    @Query("SELECT * FROM course_points WHERE courseId = :courseId AND featureType = 'BASKET' AND holeNumber = :holeNumber LIMIT 1")
+    suspend fun getBasketForHole(courseId: Long, holeNumber: Int): CoursePoint?
+
     /** Convenience join: fetch a tee's Course in one query. */
     @Query("SELECT * FROM courses WHERE id = (SELECT courseId FROM course_points WHERE id = :pointId)")
     suspend fun getCourseForPoint(pointId: Long): Course?
